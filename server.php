@@ -13,6 +13,10 @@
         echo pullMessages();
     else if ($i_command == "joinServer")
         echo joinServer();
+    else if ($i_command == "updateClient")
+        echo updateClient();
+    else if ($i_command == "chooseTarget")
+        echo chooseTarget();
     else if ($i_command == "confirmConnection")
         echo confirmConnection();
     else
@@ -59,8 +63,31 @@
         session_id( "x" . $i_session );
         session_start();
         
-        addToMessageQueue("confirmConnection", "");
+        $_SESSION['messageQueue_' . $i_issuer] = array();
+        addToMessageQueue("confirmConnection", "", "");
         return "CONNECTED";
+    }
+    
+    function updateClient()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        addToMessageQueue("updateFromServer", $i_arg1, $i_arg2);
+        return "UPDATED";
+    }
+    
+    function chooseTarget()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        addToMessageQueue("chooseTarget", $i_arg1, $i_arg2);
+        return "SENT";
     }
     
     function getNightNum()
@@ -73,7 +100,7 @@
         return $_SESSION['night'];
     }
     
-    function addToMessageQueue($message, $queue)
+    function addToMessageQueue($message, $queue, $arg)
     {
         global $i_issuer, $i_session, $i_arg1, $i_arg2;
         
@@ -87,6 +114,7 @@
         
         $message_comp["issuer"] = $i_issuer;
         $message_comp["message"] = $message;
+        $message_comp["arg"] = $arg;
         
         $messages = $_SESSION['messageQueue_' . $queue];
         array_push($messages, $message_comp);

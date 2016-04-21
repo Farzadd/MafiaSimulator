@@ -44,7 +44,7 @@ function listen()
         if (commands != "")
         {
             $.each( commands, function( key, value ) {
-                handleCommand(value["issuer"], value["message"]);
+                handleCommand(value["issuer"], value["message"], value["arg"]);
             });
         }
         
@@ -52,12 +52,26 @@ function listen()
       }, 2000);
 }
 
-function handleCommand(issuer, command)
+function handleCommand(issuer, command, arg)
 {
     if (command == "confirmConnection")
     {
         $("#pnl_" + issuer).html("<b>" + $("#pnl_" + issuer).html() + "</b>");
-                    
+        
+        var updateArr = []; // TODO: Fix these
+        updateArr[0] = playerAlive[getPlayerID(issuer)];
+        updateArr[1] = playerRoles[getPlayerID(issuer)];
+        updateArr[2] = playerNames.join("~");
+        executeCommand("updateClient", issuer, JSON.stringify(updateArr));
+        
         logEvent(issuer + " has connected!");
+    }
+    else if (command == "updateFromServer")
+    {
+        processUpdate(JSON.parse(arg));
+    }
+    else if (command == "chooseTarget")
+    {
+        clientChooseTarget(arg);
     }
 }
