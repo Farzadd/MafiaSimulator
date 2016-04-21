@@ -56,15 +56,7 @@ function handleCommand(issuer, command, arg)
 {
     if (command == "confirmConnection")
     {
-        $("#pnl_" + issuer).html("<b>" + $("#pnl_" + issuer).html() + "</b>");
-        
-        var updateArr = []; // TODO: Fix these
-        updateArr[0] = playerAlive[getPlayerID(issuer)];
-        updateArr[1] = playerRoles[getPlayerID(issuer)];
-        updateArr[2] = playerNames.join("~");
-        executeCommand("updateClient", issuer, JSON.stringify(updateArr));
-        
-        logEvent(issuer + " has connected!");
+        processConnection(issuer);
     }
     else if (command == "updateFromServer")
     {
@@ -73,5 +65,17 @@ function handleCommand(issuer, command, arg)
     else if (command == "chooseTarget")
     {
         clientChooseTarget(arg);
+    }
+    else if (command == "chosenTarget")
+    {
+        chosenTarget(issuer, arg);
+    }
+    else if (command == "infoAndConfirm")
+    {
+        clientInfoAndConfirm(arg);
+    }
+    else if (command == "infoConfirmed")
+    {
+        infoConfirmed(issuer);
     }
 }

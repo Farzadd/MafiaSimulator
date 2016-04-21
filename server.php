@@ -17,6 +17,12 @@
         echo updateClient();
     else if ($i_command == "chooseTarget")
         echo chooseTarget();
+    else if ($i_command == "chosenTarget")
+        echo chosenTarget();
+    else if ($i_command == "infoAndConfirm")
+        echo infoAndConfirm();
+    else if ($i_command == "infoConfirmed")
+        echo infoConfirmed();
     else if ($i_command == "confirmConnection")
         echo confirmConnection();
     else
@@ -39,6 +45,11 @@
         $_SESSION['server_id'] = $i_issuer;
         $_SESSION['players'] = $i_arg1;
         $_SESSION['messageQueue_' . $i_issuer] = array();
+        
+        foreach ($playerNames as $player)
+        {
+            $_SESSION['messageQueue_' . $player] = array();
+        }
         
         return  $playerNames[0] . $rand;
     }
@@ -64,8 +75,8 @@
         session_start();
         
         $_SESSION['messageQueue_' . $i_issuer] = array();
-        addToMessageQueue("confirmConnection", "", "");
-        return "CONNECTED";
+        
+        return addToMessageQueue("confirmConnection", "", "");
     }
     
     function updateClient()
@@ -75,8 +86,7 @@
         session_id( "x" . $i_session );
         session_start();
         
-        addToMessageQueue("updateFromServer", $i_arg1, $i_arg2);
-        return "UPDATED";
+        return addToMessageQueue("updateFromServer", $i_arg1, $i_arg2);
     }
     
     function chooseTarget()
@@ -85,9 +95,38 @@
         
         session_id( "x" . $i_session );
         session_start();
+       
+        return addToMessageQueue("chooseTarget", $i_arg1, $i_arg2);
+    }
+    
+    function chosenTarget()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
         
-        addToMessageQueue("chooseTarget", $i_arg1, $i_arg2);
-        return "SENT";
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("chosenTarget", "", $i_arg1);
+    }
+    
+    function infoAndConfirm()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("infoAndConfirm", $i_arg1, $i_arg2);
+    }
+    
+    function infoConfirmed()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("infoConfirmed", "", "");
     }
     
     function getNightNum()
@@ -116,11 +155,14 @@
         $message_comp["message"] = $message;
         $message_comp["arg"] = $arg;
         
-        $messages = $_SESSION['messageQueue_' . $queue];
-        array_push($messages, $message_comp);
-        $_SESSION['messageQueue_' . $queue] = $messages;
-        
-        return "SUCCESS";
+        if (isset($_SESSION['messageQueue_' . $queue])) {
+            $messages = $_SESSION['messageQueue_' . $queue];
+            array_push($messages, $message_comp);
+            $_SESSION['messageQueue_' . $queue] = $messages;
+            return "SUCCESS";
+        } else {
+            return "PLAYER NOT CONNECTED";
+        }
     }
     
     function pullMessages()

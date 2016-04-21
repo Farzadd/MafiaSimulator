@@ -1,5 +1,6 @@
 var loaded  = false;
 var myRole = "";
+var noActionMessage = "No action to perform at this time.";
 
 // Front-end logic
 $("#tbGameID").keypress(function(event) {
@@ -59,7 +60,8 @@ function processUpdate(arg)
 {
     var alive = arg[0];
     var role = arg[1];
-    var playersAlive = arg[2].split("~");
+    var alivePlayers = arg[2].split("~");
+    var deadPlayers = arg[3].split("~");
     
     if (alive)
     {
@@ -74,14 +76,18 @@ function processUpdate(arg)
     
     var tempString = "";
     tempString = "<ol>";
-    jQuery.each( playersAlive, function( i, val ) {
+    jQuery.each( alivePlayers, function( i, val ) {
         tempString += "<li>" + val + "</li>";
+    });
+    jQuery.each( deadPlayers, function( i, val ) {
+        tempString += "<li><strike>" + val + "</strike></li>";
     });
     tempString += "</ol>";
     
     $( "#playerListClient" ).html(tempString);
-    $( "#playersAliveCount" ).text(playersAlive.length);
-    $( "#votesRequired" ).text( Math.ceil((playersAlive.length+1)/2) );
+    $( "#playersAliveCount" ).text(alivePlayers.length);
+    $( "#votesRequired" ).text( Math.ceil((alivePlayers.length+1)/2) );
+    $( "#actionArea" ).html(noActionMessage);
     
     if (!loaded)
     {
@@ -96,12 +102,31 @@ function clientChooseTarget(arg)
 {   
     var targets = arg.split("~");
     
-    var tempString = "";
-    tempString = "<ol>";
+    var tempString = "<center>";
     jQuery.each( targets, function( i, val ) {
-        tempString += "<li>" + val + "</li>";
+        tempString += "<button class=\"btn btn-danger chooseTarget\" type=\"button\" style=\"width: 150px; margin-bottom: 10px;\">" + val + "</button><br>";
     });
-    tempString += "</ol>";
+    tempString += "</center>";
     
     $( "#actionArea" ).html(tempString);
+    
+    $(".chooseTarget").click(function() {
+        var targetID = $(this).text();
+        var response = executeCommand("chosenTarget", targetID);
+        
+        $("#actionArea").html(noActionMessage);
+    });
+}
+
+function clientInfoAndConfirm(arg)
+{
+    var tempString = "<center>" + arg + "<br><br><button class=\"btn btn-danger\" id=\"confirmInfo\" type=\"button\" style=\"width: 150px; margin-bottom: 10px;\">Got it!</button></center>";
+    
+    $( "#actionArea" ).html(tempString);
+    
+    $("#confirmInfo").click(function() {
+        var response = executeCommand("infoConfirmed");
+        
+        $("#actionArea").html(noActionMessage);
+    });
 }
