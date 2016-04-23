@@ -10,10 +10,17 @@ var gameStarted = false;
 var currentNight = 0;
 var currentRole = "";
 
+var mafiaTarget = [];
+var mafiaKillId = 0;
+var medicTarget = -1;
+var policeReference = -1;
+var vigiTarget = -1;
+var oracleTarget = -1;
+
 var youtubePlayer;
 var playerOrgVolume;
+var context = new (window.AudioContext || window.webkitAudioContext)();
 
-var policeReference = -1;
 
 // Front-end logic
 $("#tbPlayerName").keypress(function(event) {
@@ -118,11 +125,11 @@ function addPlayer(name)
 function reloadPlayerList()
 {
     var tempString = "";
-    tempString = "<ol>";
+    tempString = "<table class=\"table table-striped\"><tr><th>#</th><th>Name</th><th>Actions</th><th>Status</th><th>Role</th></tr>";
     jQuery.each( playerNames, function( i, val ) {
-        tempString += "<li><span id=\"pnl_" + val + "\">" + val + "</span><span style=\"float: right;\"><a href=\"#\" class=\"pLynch\" data-id=\"" + i + "\">[LYNCH]</a> [<span id=\"pStatus" + i + "\">PRE-GAME</span>] [<a id=\"pRole" + i + "\" data-toggle=\"tooltip\" data-placement=\"right\" title=\"Unassigned\">ROLE</a>]</span></li>";
+        tempString += "<tr><td>" + i + "</td><td id=\"pnl_" + val + "\">" + val + "</td><td><a href=\"#\" class=\"btn btn-xs btn-danger pLynch\" data-id=\"" + i + "\">LYNCH</a></td><td id=\"pStatus" + i + "\">PRE-GAME</td><td><a id=\"pRole" + i + "\" data-toggle=\"tooltip\" data-placement=\"right\" title=\"Unassigned\">ROLE</a></td></li>";
     });
-    tempString += "</ol>";
+    tempString += "</table>";
     
     $( "#playerList" ).html(tempString);
     $('[data-toggle="tooltip"]').tooltip();
@@ -130,8 +137,19 @@ function reloadPlayerList()
     $(".pLynch").click(function() {
         if (gameStarted)
         {
-            changePlayerStatus($(this).attr("data-id"), false);
-            
+            if (confirm("Are you sure you want lynch " + playerNames[$(this).attr("data-id")] + "?"))
+            {
+                changePlayerStatus($(this).attr("data-id"), false);
+                logEvent(playerNames[$(this).attr("data-id")] + " has been lynched.");
+                speakText(playerNames[$(this).attr("data-id")] + " has been lynched.");
+                
+                var winner = checkWinCondition();
+                if (winner != "")
+                {
+                    speakText("The game is over... " + winner + " have won!");
+                    logEvent("The game is over... " + winner + " have won!");
+                }
+            }
         } else
             alert("Can not lynch yet, the game has not started!");
     });
@@ -170,12 +188,15 @@ function startGame()
         $("#btnDebug").prop("disabled", true);
         $("#btnDebug").hide();
         
+        playerConnected = new Array(playerNames.length);
+        playerAlive = new Array(playerNames.length);
+    
         assignRoles();
         
         disableForm("roleForm");
         disableForm("settingForm");
         
-        userID = Math.floor((Math.random() * 9999) + 1000);
+        userID = Math.floor((Math.random() * 8999) + 1000);
         gameID = executeCommand("createSession", playerNames.join(","), "");
         $('#txtGameID').text("Game ID: " + gameID);
         
@@ -263,7 +284,7 @@ function changePlayerStatus(id, status)
         $('.pLynch[data-id=' + id + "]").hide();
     }
     
-    updateClient(i);
+    updateAllClients();
 }
 
 function updateClient(player)
@@ -271,14 +292,14 @@ function updateClient(player)
     if (!playerConnected[player])
         return;
     
-    alivePlayers = [];
-    deadPlayers = [];
+    var alivePlayers = [];
+    var deadPlayers = [];
     
-    for (i = 0; i < playerNames.length; i++) {
-        if (playerAlive[i])
-            alivePlayers.push(playerNames[i]);
+    for (uc_i = 0; uc_i < playerNames.length; uc_i++) {
+        if (playerAlive[uc_i])
+            alivePlayers.push(playerNames[uc_i]);
         else
-            deadPlayers.push(playerNames[i]);
+            deadPlayers.push(playerNames[uc_i]);
     }
     
     var updateArr = [];
@@ -291,27 +312,31 @@ function updateClient(player)
 
 function updateAllClients()
 {   
-    alivePlayers = [];
-    deadPlayers = [];
+    var alivePlayers = [];
+    var deadPlayers = [];
     
-    for (i = 0; i < playerNames.length; i++) {
-        if (playerAlive[i])
-            alivePlayers.push(playerNames[i]);
+    for (cl_id = 0; cl_id < playerNames.length; cl_id++) {
+        if (playerAlive[cl_id])
+            alivePlayers.push(playerNames[cl_id]);
         else
-            deadPlayers.push(playerNames[i]);
+            deadPlayers.push(playerNames[cl_id]);
     }
     
-    for (i = 0; i < playerNames.length; i++)
-    {
-        if (!playerConnected[i])
-            continue;
-        
-        var updateArr = [];
-        updateArr[0] = playerAlive[player];
-        updateArr[1] = playerRoles[player];
-        updateArr[2] = alivePlayers.join("~");
-        updateArr[3] = deadPlayers.join("~");
-        executeCommand("updateClient", playerNames[player], JSON.stringify(updateArr));
+    var updateArr = [];
+    updateArr[0] = false;
+    updateArr[1] = "";
+    updateArr[2] = alivePlayers.join("~");
+    updateArr[3] = deadPlayers.join("~");
+    
+    for (cl_id = 0; cl_id < playerNames.length; cl_id++)
+    {   
+        if (playerConnected[cl_id])
+        {
+            updateArr[0] = playerAlive[cl_id];
+            updateArr[1] = playerRoles[cl_id];
+            
+            executeCommand("updateClient", playerNames[cl_id], JSON.stringify(updateArr));
+        }
     }
 }
 
@@ -334,7 +359,6 @@ function speakText(text)
     var key = "38ade4347d4f4724a5746f3e515ef423";
     var url = "http://api.voicerss.org/?key=" + key + "&hl=en-Ca&f=48khz_16bit_stereo&src=" + text;
     
-    var context = new (window.AudioContext || window.webkitAudioContext)();
     var request = new XMLHttpRequest();
     var source = context.createBufferSource();
     request.open('GET', url, true);
@@ -368,8 +392,8 @@ function onYouTubeIframeAPIReady() {
 
 function separateRole(role)
 {
-    playersWithRole = [];
-    playersWithoutRole = [];
+    var playersWithRole = [];
+    var playersWithoutRole = [];
     
     for (i = 0; i < playerNames.length; i++) {
         if (playerAlive[i])
@@ -411,11 +435,35 @@ function getSuperRole(role)
         return role
 }
 
+function countFaction(includeDead)
+{
+    var mafiaCount = 0;
+    var townCount = 0;
+    
+    for (cf_i = 0; cf_i < playerNames.length; cf_i++) {
+        if (playerAlive[cf_i] || includeDead)
+        {
+            if (getPlayerFaction(cf_i) == "Mafia")
+                mafiaCount++;
+            else
+                townCount++;
+        }
+    }
+    
+    return [mafiaCount, townCount];
+}
+
 // Night-logic
 function beginNight()
 {
     if (youtubePlayer) youtubePlayer.playVideo();
     playerTargets = new Array(playerNames.length);
+    mafiaKillId = 0;
+    mafiaTarget = [];
+    medicTarget = -1;
+    oracleTarget = -1;
+    
+    $(".pLynch").hide();
     
     speakText("It is now night. All players close your eyes.");
     logEvent("Night " + currentNight + " has started!");
@@ -425,35 +473,75 @@ function beginNight()
     $("#btnStartNight").prop('disabled', true);
 }
 
-function chosenTarget(issuer, target)
+function chosenTarget(playerName, target)
 {
-    var playerID = getPlayerID(issuer);
-    var role = playerRoles[playerID];
+    var player = getPlayerID(playerName);
+    var role = playerRoles[player];
+    var targetID = getPlayerID(target);
+   
+    playerTargets[player] = getPlayerID(target);
     
-    playerTargets[playerID] = getPlayerID(target);
-    logEvent(issuer + " [" + role + "] has targeted " + target + "!");
-    
-    processTargets(playerID);
-}
-
-function processTargets(player)
-{
     if (currentRole == "Mafia")
     {
         var separatedPlayers = separateRole("Mafia");
+        var mTarget = -1;
+        var inconsistent = false;
         for (i = 0; i < separatedPlayers[0].length; i++) {
-            if (playerTargets[separatedPlayers[0][i]] == null)
+            var pID = getPlayerID(separatedPlayers[0][i]);
+            if (playerTargets[pID] == undefined)
             {
                 return;
             }
+            else if (mTarget == -1)
+                mTarget = playerTargets[pID];
+            else if (mTarget != playerTargets[pID])
+                inconsistent = true;
         }
         
-        // TODO
+        if (inconsistent)
+        {
+            logEvent("Mafia has inconsistent voting... try again!");
+            speakText("Mafia! Please choose a single target for your kill!");
+            
+            for (i = 0; i < separatedPlayers[0].length; i++) {
+                playerTargets[getPlayerID(separatedPlayers[0][i])] = undefined;
+            }
+            
+            batchChooseTarget("Mafia");
+            
+            return;
+        } else {
+            // Record target
+            mafiaTarget[mafiaKillId] = mTarget;
+            mafiaKillId ++;
+            
+            logEvent("Mafia has chosen " + playerNames[mTarget] + " as kill #" + mafiaKillId + "!");
+            
+            // Next legit kill
+            if (mafiaKillId < calculateKillPower())
+            {
+                for (i = 0; i < separatedPlayers[0].length; i++) {
+                    playerTargets[getPlayerID(separatedPlayers[0][i])] = undefined;
+                }
+                
+                speakText("Mafia! Please choose target number " + (mafiaKillId+1) + "!");
+                batchChooseTarget("Mafia");
+                
+                return;
+            }
+            
+            // Fake kill
+            if (mafiaKillId < $("#numMafiaPower").val())
+            {
+                fakeMafiaKill();
+                return;
+            }
+        }
     }
     else if (currentRole == "Detective")
     {
-        var target = playerTargets[player];
-        executeCommand("infoAndConfirm", playerNames[player], playerNames[target] + " is <b>" + ((getPlayerFaction(target) == "Mafia") ? "Mafia" : "NOT Mafia") + "</b>.");
+        logEvent(playerName + " [Detective] has checked " + target + "!");
+        executeCommand("infoAndConfirm", playerName, target + " is <b>" + ((getPlayerFaction(targetID) == "Mafia") ? "Mafia" : "NOT Mafia") + "</b>.");
         
         return;
     }
@@ -461,16 +549,60 @@ function processTargets(player)
     {
         if (policeReference == -1)
         {
-            policeReference = playerTargets[player];
+            policeReference = targetID;
+            logEvent(playerName + " [Policeman] has chosen " + target + " as their reference!");
         }
         else
         {
-            var target = playerTargets[player];
-            executeCommand("infoAndConfirm", playerNames[player], playerNames[target] + " and " + playerNames[policeReference] + " are in <b>" + ((getPlayerFaction(target) == getPlayerFaction(policeReference)) ? "THE SAME</b> faction." : "DIFFERENT</b> factions."));
+            logEvent(playerName + " [Policeman] has compared " + target + " to " + playerNames[policeReference] + "!");
+            
+            executeCommand("infoAndConfirm", playerName, target + " and " + playerNames[policeReference] + " are in <b>" + ((getPlayerFaction(targetID) == getPlayerFaction(policeReference)) ? "THE SAME</b> faction." : "DIFFERENT</b> factions."));
             return;
         }
     }
+    else if (currentRole == "Medic")
+    {
+        medicTarget = targetID;
+        logEvent(playerName + " [Medic] wants to save " + target + "!");
+    }
+    else if (currentRole == "Vigilante")
+    {
+        if (targetID == -1)
+            logEvent(playerName + " [Vigilante] has chosen not to shoot.");
+        else {
+            vigiTarget = targetID;
+            logEvent(playerName + " [Vigilante] has taken their shot at " + target + "!");
+        }
+    }
+    else if (currentRole == "Oracle")
+    {
+        oracleTarget = targetID;
+        logEvent(playerName + " [Oracle] has focused on " + target + ".");
+    }
+    else
+    {
+        logEvent(playerName + " [" + role + "] has targeted " + target + "!");
+    }
     
+    speakText("Okay! " + currentRole + " close your eyes.");
+    wakeNext();
+}
+
+function fakeMafiaKill()
+{
+    if (mafiaKillId < $("#numMafiaPower").val())
+    {
+        speakText("Mafia! Please choose target number " + (mafiaKillId+1) + "!");
+        setTimeout(fakeMafiaKill, Math.floor((Math.random() * 10000) + 10000) );
+        mafiaKillId ++;
+    } else {
+        speakText("Okay! Mafia close your eyes.");
+        wakeNext();
+    }
+}
+
+function fakeDead()
+{
     speakText("Okay! " + currentRole + " close your eyes.");
     wakeNext();
 }
@@ -479,6 +611,14 @@ function infoConfirmed(issuer)
 {
     speakText("Okay! " + currentRole + " close your eyes.");
     wakeNext();
+}
+
+function calculateKillPower()
+{
+    var aliveMafiaCount = countFaction(false)[0];
+    var pointsPerMafia = $("#numMafiaPower").val() / $("#numMafia").val()
+    
+    return Math.ceil(aliveMafiaCount * pointsPerMafia);
 }
 
 function wakeNext() {
@@ -492,11 +632,12 @@ function wakeNext() {
             {
                 if (isNextRole)
                 {
-                    if (elemID == "VillageIdiot")
-                        setTimeout(function(){ wakeAll(); }, 7000);
-                    else
-                        setTimeout(function(){ wakeRole(elemID); }, 7000);
+                    if (elemID == "VillageIdiot") {
+                        return true;
+                    }
                     
+                    setTimeout(function(){ wakeRole(elemID); }, 7000);
+                    isNextRole = false;
                     return false
                 }
                 else if (elemID == currentRole)
@@ -504,21 +645,44 @@ function wakeNext() {
             }
         }
     });
+    
+    if (isNextRole)
+        setTimeout(function(){ wakeAll(); }, 7000);
 }
 
 function wakeRole(role)
 {   
     currentRole = role;
     
-    var separatedPlayers = separateRole(getSuperRole(role));
-    for (i = 0; i < separatedPlayers[0].length; i++) {
-        if (role == "Barkeeper" && playerRoles[getPlayerID(separatedPlayers[0][i])] != "Barkeeper")
-            continue;
-        
-        executeCommand("chooseTarget", separatedPlayers[0][i], separatedPlayers[1].join("~"));
-    }
+    if ( batchChooseTarget(role) == 0 || (role == "Vigilante" && vigiTarget != -1) )
+        setTimeout(fakeDead, Math.floor((Math.random() * 11000) + 9000) );
     
     speakText(role + ". Open your eyes and choose your target.");
+}
+
+function batchChooseTarget(role)
+{
+    var separatedPlayers = separateRole(getSuperRole(role));
+    
+    if (role == "Policeman" && policeReference != -1)
+    {
+        var index = separatedPlayers[1].indexOf(playerNames[policeReference]);
+        if (index != -1)
+            separatedPlayers[1].splice(index, 1);
+    }
+    else if (role == "Vigilante")
+    {
+        separatedPlayers[1].unshift("None");
+    }
+    
+    for (wr_i = 0; wr_i < separatedPlayers[0].length; wr_i++) {
+        if (role == "Barkeeper" && playerRoles[getPlayerID(separatedPlayers[0][wr_i])] != "Barkeeper")
+            continue;
+        
+        executeCommand("chooseTarget", separatedPlayers[0][wr_i], separatedPlayers[1].join("~"));
+    }
+    
+    return separatedPlayers[0].length;
 }
 
 function wakeAll()
@@ -528,6 +692,76 @@ function wakeAll()
     speakText("The night is over. Everyone wake up.");
     logEvent("Night " + currentNight + " has ended!");
     
+    $(".pLynch").show();
+    
+    setTimeout(processAndAnnounce, 6000);
+    
     currentNight ++;
     $("#btnStartNight").prop('disabled', false);
+}
+
+function processAndAnnounce()
+{
+    var shotList = [];
+    for (t = 0; t < mafiaTarget.length; t++)
+    {
+        if (shotList.indexOf(mafiaTarget[t]) != -1)
+            logEvent("The Mafia have double-tapped " + mafiaTarget[t] + "!");
+        
+        shotList.push(mafiaTarget[t]);
+    }
+    
+    if (vigiTarget != -1)
+        shotList.push(vigiTarget);
+        
+    var iMedicT = shotList.indexOf(medicTarget);
+    if (iMedicT != -1)
+    {
+        logEvent("The Medic has saved " + playerNames[medicTarget] + " from a bullet!");
+        shotList.splice(iMedicT, 1);
+    }
+    
+    if (shotList.length == 0)
+        speakText("No one has died!");
+    else
+    {
+        var announcement = "The following people have been killed";
+        for (t = 0; t < shotList.length; t++)
+        {
+            changePlayerStatus(shotList[t], false);
+            announcement = announcement + ", " + playerNames[shotList[t]];
+        }
+        
+        var ourOracle = getRolePlayer("Oracle");
+        if (shotList.indexOf(ourOracle) != -1)
+            announcement = announcement + ". Oracle has died, " + playerNames[oracleTarget] + " is " + playerRoles[oracleTarget];
+        
+        var winner = checkWinCondition();
+        if (winner != "")
+            announcement = announcement + ". The game is over... " + winner + " have won!";
+        
+        announcement = announcement + ".";
+        speakText(announcement);
+        logEvent(announcement);
+    }
+}
+
+function checkWinCondition()
+{
+    var count = countFaction(false);
+    
+    if (count[0] == 0)
+    {
+        $("#gameStatus").text("Town Victory");
+        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Town");
+        return "Town"
+    }
+    else if (count[0] >= count[1])
+    {
+        $("#gameStatus").text("Mafia Victory");
+        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Mafia");
+        return "Mafia";
+    }
+    
+    return "";
 }

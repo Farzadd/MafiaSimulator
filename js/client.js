@@ -12,13 +12,14 @@ $("#tbGameID").keypress(function(event) {
 
 $("#btnJoinGameID").click(function() {
     gameID = $("#tbGameID").val();
-    $('#txtGameID').text("Game ID: " + gameID);
     var response = executeCommand("joinServer");
     
     if (response == "FAIL")
     {
         $("#divSelectPlayer").html("<center>Unable to join game!</center>");
     } else {
+        $('#txtGameID').text("Game ID: " + gameID);
+        
         var tempString = "<div class=\"col-lg-12\"><center>";
         var players = response.split(",");
         jQuery.each( players, function( i, val ) {
@@ -77,15 +78,17 @@ function processUpdate(arg)
     var tempString = "";
     tempString = "<ol>";
     jQuery.each( alivePlayers, function( i, val ) {
-        tempString += "<li>" + val + "</li>";
+        if (val != "")
+            tempString += "<li>" + val + "</li>";
     });
     jQuery.each( deadPlayers, function( i, val ) {
-        tempString += "<li><strike>" + val + "</strike></li>";
+        if (val != "")
+            tempString += "<li><strike>" + val + "</strike></li>";
     });
     tempString += "</ol>";
     
     $( "#playerListClient" ).html(tempString);
-    $( "#playersAliveCount" ).text(alivePlayers.length);
+    $( "#playersAliveCount" ).text(alivePlayers.length + " Alive");
     $( "#votesRequired" ).text( Math.ceil((alivePlayers.length+1)/2) );
     $( "#actionArea" ).html(noActionMessage);
     

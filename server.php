@@ -74,7 +74,8 @@
         session_id( "x" . $i_session );
         session_start();
         
-        $_SESSION['messageQueue_' . $i_issuer] = array();
+        if (!isset($_SESSION['messageQueue_' . $i_issuer]))
+            $_SESSION['messageQueue_' . $i_issuer] = array();
         
         return addToMessageQueue("confirmConnection", "", "");
     }
@@ -155,13 +156,31 @@
         $message_comp["message"] = $message;
         $message_comp["arg"] = $arg;
         
-        if (isset($_SESSION['messageQueue_' . $queue])) {
-            $messages = $_SESSION['messageQueue_' . $queue];
-            array_push($messages, $message_comp);
-            $_SESSION['messageQueue_' . $queue] = $messages;
+        if ($queue == "R_ALL_PLAYERS_B")
+        {
+            $playerNames = explode(",", $_SESSION['players']);
+            
+            foreach ($playerNames as $player)
+            {
+                if (isset($_SESSION['messageQueue_' . $player])) {
+                    $messages = $_SESSION['messageQueue_' . $player];
+                    array_push($player, $message_comp);
+                    $_SESSION['messageQueue_' . $player] = $messages;
+                }
+            }
+            
             return "SUCCESS";
-        } else {
-            return "PLAYER NOT CONNECTED";
+        }
+        else
+        {
+            if (isset($_SESSION['messageQueue_' . $queue])) {
+                $messages = $_SESSION['messageQueue_' . $queue];
+                array_push($messages, $message_comp);
+                $_SESSION['messageQueue_' . $queue] = $messages;
+                return "SUCCESS";
+            } else {
+                return "PLAYER NOT CONNECTED";
+            }
         }
     }
     

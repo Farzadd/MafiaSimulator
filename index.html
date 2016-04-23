@@ -227,7 +227,7 @@
                 </div>
                 <div class="col-md-6" id="divLiveGame" style="display:none;">
                     <fieldset>
-                        <legend>Status <div class="pull-right" id="roleCount">LIVE</div></legend>
+                        <legend>Status <div class="pull-right" id="gameStatus">LIVE</div></legend>
                         <div id="accordion" role="tablist" aria-multiselectable="true">
                             <div class="panel panel-default">
                                 <div class="panel-heading" role="tab" id="headingOne">
@@ -270,10 +270,10 @@
                 </div>
                 <div class="col-md-6" style="margin-bottom: 25px;">
                     <fieldset>
-                        <legend>Players<div class="pull-right" id="playersAliveCount">0</div> Alive</legend>
+                        <legend>Players<div class="pull-right" id="playersAliveCount">0 Alive</div></legend>
                         <div id="playerListClient" style="margin-bottom: 5px">
                         </div>
-                        <center><div id="votesRequired"></div> votes required to lynch</center>
+                        <center><span class="label label-success" id="votesRequired"></span> votes required to lynch</center>
                     </fieldset>
                 </div>
             </div>
