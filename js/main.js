@@ -78,4 +78,8 @@ function handleCommand(issuer, command, arg)
     {
         infoConfirmed(issuer);
     }
+    else if (command == "gameOver")
+    {
+        clientGameOver(arg);
+    }
 }

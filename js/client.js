@@ -133,3 +133,9 @@ function clientInfoAndConfirm(arg)
         $("#actionArea").html(noActionMessage);
     });
 }
+
+function clientGameOver(arg)
+{
+    $('#victoryModalLabel').text(arg + " Victory!");
+    $('#victoryModal').modal('show');
+}

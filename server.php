@@ -23,6 +23,8 @@
         echo infoAndConfirm();
     else if ($i_command == "infoConfirmed")
         echo infoConfirmed();
+    else if ($i_command == "gameOver")
+        echo gameOver();
     else if ($i_command == "confirmConnection")
         echo confirmConnection();
     else
@@ -130,6 +132,16 @@
         return addToMessageQueue("infoConfirmed", "", "");
     }
     
+    function gameOver()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("gameOver", $i_arg1, $i_arg2);
+    }
+    
     function getNightNum()
     {
         global $i_issuer, $i_session, $i_arg1, $i_arg2;
@@ -164,7 +176,7 @@
             {
                 if (isset($_SESSION['messageQueue_' . $player])) {
                     $messages = $_SESSION['messageQueue_' . $player];
-                    array_push($player, $message_comp);
+                    array_push($messages, $message_comp);
                     $_SESSION['messageQueue_' . $player] = $messages;
                 }
             }

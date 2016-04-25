@@ -16,6 +16,7 @@ var medicTarget = -1;
 var policeReference = -1;
 var vigiTarget = -1;
 var oracleTarget = -1;
+var prostituteTarget = -1;
 
 var youtubePlayer;
 var playerOrgVolume;
@@ -127,7 +128,7 @@ function reloadPlayerList()
     var tempString = "";
     tempString = "<table class=\"table table-striped\"><tr><th>#</th><th>Name</th><th>Actions</th><th>Status</th><th>Role</th></tr>";
     jQuery.each( playerNames, function( i, val ) {
-        tempString += "<tr><td>" + i + "</td><td id=\"pnl_" + val + "\">" + val + "</td><td><a href=\"#\" class=\"btn btn-xs btn-danger pLynch\" data-id=\"" + i + "\">LYNCH</a></td><td id=\"pStatus" + i + "\">PRE-GAME</td><td><a id=\"pRole" + i + "\" data-toggle=\"tooltip\" data-placement=\"right\" title=\"Unassigned\">ROLE</a></td></li>";
+        tempString += "<tr><td>" + (i+1) + "</td><td id=\"pnl_" + val + "\">" + val + "</td><td><button class=\"btn btn-xs btn-danger pLynch\" style=\"display:none;\" data-id=\"" + i + "\">LYNCH</button></td><td id=\"pStatus" + i + "\">PRE-GAME</td><td><a id=\"pRole" + i + "\" data-toggle=\"tooltip\" data-placement=\"right\" title=\"Unassigned\">ROLE</a></td></li>";
     });
     tempString += "</table>";
     
@@ -146,8 +147,8 @@ function reloadPlayerList()
                 var winner = checkWinCondition();
                 if (winner != "")
                 {
-                    speakText("The game is over... " + winner + " have won!");
-                    logEvent("The game is over... " + winner + " have won!");
+                    speakText("The game is over... The " + winner + " has won!");
+                    logEvent("The game is over... The " + winner + " has won!");
                 }
             }
         } else
@@ -462,8 +463,9 @@ function beginNight()
     mafiaTarget = [];
     medicTarget = -1;
     oracleTarget = -1;
+    prostituteTarget = -1;
     
-    $(".pLynch").hide();
+    $(".pLynch").prop("disabled", true);
     
     speakText("It is now night. All players close your eyes.");
     logEvent("Night " + currentNight + " has started!");
@@ -579,6 +581,11 @@ function chosenTarget(playerName, target)
         oracleTarget = targetID;
         logEvent(playerName + " [Oracle] has focused on " + target + ".");
     }
+    else if (currentRole == "Prostitute")
+    {
+        prostituteTarget = targetID;
+        logEvent(playerName + " [Prostitute] has taken " + target + " home!");
+    }
     else
     {
         logEvent(playerName + " [" + role + "] has targeted " + target + "!");
@@ -692,7 +699,7 @@ function wakeAll()
     speakText("The night is over. Everyone wake up.");
     logEvent("Night " + currentNight + " has ended!");
     
-    $(".pLynch").show();
+    $(".pLynch").prop("disabled", false);
     
     setTimeout(processAndAnnounce, 6000);
     
@@ -706,7 +713,7 @@ function processAndAnnounce()
     for (t = 0; t < mafiaTarget.length; t++)
     {
         if (shotList.indexOf(mafiaTarget[t]) != -1)
-            logEvent("The Mafia have double-tapped " + mafiaTarget[t] + "!");
+            logEvent("The Mafia have double-tapped " + playerNames[mafiaTarget[t]] + "!");
         
         shotList.push(mafiaTarget[t]);
     }
@@ -714,11 +721,34 @@ function processAndAnnounce()
     if (vigiTarget != -1)
         shotList.push(vigiTarget);
         
-    var iMedicT = shotList.indexOf(medicTarget);
-    if (iMedicT != -1)
+    if (medicTarget != -1)
     {
-        logEvent("The Medic has saved " + playerNames[medicTarget] + " from a bullet!");
-        shotList.splice(iMedicT, 1);
+        var iMedicT = shotList.indexOf(medicTarget);
+        if (iMedicT != -1)
+        {
+            logEvent("The Medic has saved " + playerNames[medicTarget] + " from a bullet!");
+            shotList.splice(iMedicT, 1);
+        }
+    }
+    
+    if (prostituteTarget != -1)
+    {
+        var iProstitute = shotList.indexOf( getRolePlayer("Prostitute") );
+        var iProstituteT = shotList.indexOf(prostituteTarget);
+        if (iProstitute != -1)
+        {
+            logEvent("The Prostitute has taken " + playerNames[prostituteTarget] + " down with her!");
+            shotList.push(prostituteTarget);
+        }
+        else if (iProstituteT != -1)
+        {
+            logEvent("The Prostitute has saved " + playerNames[prostituteTarget] + "!");
+            do {
+                shotList.splice(iProstituteT, 1);
+                iProstituteT = shotList.indexOf(prostituteTarget);
+            }
+            while (iProstituteT != -1);
+        }
     }
     
     if (shotList.length == 0)
@@ -726,19 +756,20 @@ function processAndAnnounce()
     else
     {
         var announcement = "The following people have been killed";
+        var ourOracle = getRolePlayer("Oracle");
+        
         for (t = 0; t < shotList.length; t++)
         {
             changePlayerStatus(shotList[t], false);
             announcement = announcement + ", " + playerNames[shotList[t]];
         }
         
-        var ourOracle = getRolePlayer("Oracle");
         if (shotList.indexOf(ourOracle) != -1)
             announcement = announcement + ". Oracle has died, " + playerNames[oracleTarget] + " is " + playerRoles[oracleTarget];
         
         var winner = checkWinCondition();
         if (winner != "")
-            announcement = announcement + ". The game is over... " + winner + " have won!";
+            announcement = announcement + ". The game is over... The " + winner + " has won!";
         
         announcement = announcement + ".";
         speakText(announcement);
