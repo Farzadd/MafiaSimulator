@@ -1,6 +1,6 @@
 var loaded  = false;
 var myRole = "";
-var noActionMessage = "No action to perform at this time.";
+var noActionMessage = "<center>No action to perform at this time.<br><button class=\"btn btn-xs btn-success\" onClick=\"refreshListen();\">Refresh</button></center>";
 
 // Front-end logic
 $("#tbGameID").keypress(function(event) {
@@ -12,7 +12,7 @@ $("#tbGameID").keypress(function(event) {
 
 $("#btnJoinGameID").click(function() {
     gameID = $("#tbGameID").val();
-    var response = executeCommand("joinServer");
+    var response = executeCommand("joinServer", "", "", false);
     
     if (response == "FAIL")
     {
@@ -30,7 +30,7 @@ $("#btnJoinGameID").click(function() {
         
         $(".selectPlayer").click(function() {
             userID = $(this).text();
-            var response = executeCommand("confirmConnection");
+            var response = executeCommand("confirmConnection", "", "", false);
             
             $("#playerName").text(userID);
             listen();
@@ -115,7 +115,7 @@ function clientChooseTarget(arg)
     
     $(".chooseTarget").click(function() {
         var targetID = $(this).text();
-        var response = executeCommand("chosenTarget", targetID);
+        var response = executeCommand("chosenTarget", targetID, "", false);
         
         $("#actionArea").html(noActionMessage);
     });
@@ -128,7 +128,7 @@ function clientInfoAndConfirm(arg)
     $( "#actionArea" ).html(tempString);
     
     $("#confirmInfo").click(function() {
-        var response = executeCommand("infoConfirmed");
+        var response = executeCommand("infoConfirmed", "", "", false);
         
         $("#actionArea").html(noActionMessage);
     });

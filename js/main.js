@@ -1,5 +1,6 @@
 var userID = "";
 var gameID = "";
+var listenTimer = -1;
 
 if (window.addEventListener) window.addEventListener("load", autorun, false);
 else if (window.attachEvent) window.attachEvent("onload", autorun);
@@ -21,7 +22,7 @@ function autorun()
 {
 }
 
-function executeCommand(command, arg1, arg2) {
+function executeCommand(command, arg1, arg2, async) {
     var session = gameID;
     if (session == "")
         session = "none";
@@ -29,16 +30,16 @@ function executeCommand(command, arg1, arg2) {
     return $.ajax({
         type: "GET",
         url: "server.php?id=" + userID + "&session=" + session + "&cmd=" + command + "&arg1=" + arg1 + "&arg2=" + arg2,
-        async: false
+        async: async
     }).responseText;
 }
 
 function listen()
 {
-    setTimeout(
+    listenTimer = setTimeout(
       function() 
       {
-        var commands_j = executeCommand("pullMessages", gameID, "");
+        var commands_j = executeCommand("pullMessages", gameID, "", false);
         var commands = $.parseJSON(commands_j);
         
         if (commands != "")
@@ -50,6 +51,14 @@ function listen()
         
         listen();
       }, 2000);
+}
+
+function refreshListen()
+{
+    if (listenTimer != -1)
+        clearTimeout(listenTimer);
+    
+    listen();
 }
 
 function handleCommand(issuer, command, arg)

@@ -38,9 +38,10 @@
             return "ERROR 002: Insufficient arguments";
         
         $playerNames = explode(",", $i_arg1);
-        $rand = rand ( 100, 999 );
+        $rand = rand ( 10, 99 );
         
-        session_id( "x" . $playerNames[0] . $rand );
+        $gameID = substr($playerNames[0], 0, 1) . $rand;
+        session_id( "x" . $gameID );
         session_start();
         
         $_SESSION['night'] = 0;
@@ -53,7 +54,7 @@
             $_SESSION['messageQueue_' . $player] = array();
         }
         
-        return  $playerNames[0] . $rand;
+        return  $gameID;
     }
     
     function joinServer()
