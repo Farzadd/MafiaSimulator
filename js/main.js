@@ -36,7 +36,7 @@ function executeCommand(command, arg1, arg2, async) {
 
 function listen()
 {
-    listenTimer = setTimeout(
+    listenTimer = setInterval(
       function() 
       {
         var commands_j = executeCommand("pullMessages", gameID, "", false);
@@ -48,8 +48,6 @@ function listen()
                 handleCommand(value["issuer"], value["message"], value["arg"]);
             });
         }
-        
-        listen();
       }, 2000);
 }
 

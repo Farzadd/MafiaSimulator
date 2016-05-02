@@ -17,6 +17,7 @@ var policeReference = -1;
 var vigiTarget = -1;
 var oracleTarget = -1;
 var prostituteTarget = -1;
+var insaneCop = -1;
 
 var youtubePlayer;
 var playerOrgVolume;
@@ -264,6 +265,9 @@ function assignRoles()
                     $('#pRole' + playerId).attr("title", playerRoles[playerId]);
                     $('#pRole' + playerId).attr("data-original-title", playerRoles[playerId]);
                     $('[data-toggle="tooltip"]').tooltip();
+                    
+                    if (elem.attr("id").replace("num", "") == "Detective2")
+                        insaneCop = Math.round(Math.random());
                     
                     tobeAssigned.splice( rand, 1 );
                 }
@@ -546,14 +550,22 @@ function chosenTarget(playerName, target)
     else if (currentRole == "Detective")
     {
         logEvent(playerName + " [Detective] has checked " + target + "!");
-        executeCommand("infoAndConfirm", playerName, target + " is <b>" + ((getPlayerFaction(targetID) == "Mafia") ? "Mafia" : "NOT Mafia") + "</b>.", true);
+        
+        var isMafia = (getPlayerFaction(targetID) == "Mafia");
+        if (insaneCop == 0)
+            isMafia = !isMafia;
+        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", true);
         
         return;
     }
     else if (currentRole == "Detective2")
     {
-        logEvent(playerName + " [Officer Downy] has checked " + target + "!");
-        executeCommand("infoAndConfirm", playerName, target + " is <b>" + ((getPlayerFaction(targetID) != "Mafia") ? "Mafia" : "NOT Mafia") + "</b>.", true);
+        logEvent(playerName + " [Insane Cop] has checked " + target + "!");
+        
+        var isMafia = (getPlayerFaction(targetID) == "Mafia");
+        if (insaneCop == 1)
+            isMafia = !isMafia;
+        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", true);
         
         return;
     }
@@ -672,7 +684,7 @@ function wakeRole(role)
     currentRole = role;
     
     if ( batchChooseTarget(role) == 0 || (role == "Vigilante" && vigiTarget != -1) )
-        setTimeout(fakeDead, Math.floor((Math.random() * 11000) + 9000) );
+        setTimeout(fakeDead, Math.floor((Math.random() * 15000) + 15000));
     
     speakText(role + ". Open your eyes and choose your target.");
 }
