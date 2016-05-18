@@ -3,6 +3,7 @@ var playerRoles = [];
 var playerAlive = [];
 var playerConnected = [];
 var playerTargets = [];
+var playerDeathMessage = [];
 
 var roleCount = 0;
 var gameStarted = false;
@@ -13,8 +14,10 @@ var currentRole = "";
 var mafiaTarget = [];
 var mafiaKillId = 0;
 var medicTarget = -1;
+var medicPastTarget = -1;
 var policeReference = -1;
 var vigiTarget = -1;
+var serialKillerTarget = -1;
 var oracleTarget = -1;
 var prostituteTarget = -1;
 var insaneCop = -1;
@@ -48,12 +51,14 @@ $("#btnDebug").click(function() {
     addPlayer("Kimia");
     addPlayer("Shayan");
     addPlayer("Mahsan");
-    addPlayer("F13");
+    addPlayer("Seps");
     addPlayer("Behy");
-    addPlayer("Amir");
-    addPlayer("Sanam");
+    addPlayer("Reza");
+    addPlayer("Azadeh");
+    addPlayer("Saman");
     addPlayer("Shervin");
     addPlayer("Anoushe");
+    addPlayer("Faraz");
     
     $("#numMafia").val("1");
     $("#numMafiaPower").val("1");
@@ -108,6 +113,10 @@ $("#btnStartNight").click(function() {
     beginNight();
 });
 
+$("#btnRecall").click(function() {
+    batchChooseTarget(currentRole);
+});
+
 // Back-end logic
 function addPlayer(name)
 {
@@ -142,11 +151,12 @@ function reloadPlayerList()
     $(".pLynch").click(function() {
         if (gameStarted)
         {
-            if (confirm("Are you sure you want lynch " + playerNames[$(this).attr("data-id")] + "?"))
+            var playerID = $(this).attr("data-id");
+            if (confirm("Are you sure you want lynch " + playerNames[playerID] + "?"))
             {
-                changePlayerStatus($(this).attr("data-id"), false);
-                logEvent(playerNames[$(this).attr("data-id")] + " has been lynched.");
-                speakText(playerNames[$(this).attr("data-id")] + " has been lynched.");
+                changePlayerStatus(playerID, false);
+                logEvent(playerNames[playerID] + " has been lynched." + ((playerDeathMessage[playerID] != undefined) ? (" Their last words were... " + playerDeathMessage[playerID]) : ""));
+                speakText(playerNames[playerID] + " has been lynched." + ((playerDeathMessage[playerID] != undefined) ? (" Their last words were... " + playerDeathMessage[playerID]) : ""));
                 
                 var winner = checkWinCondition();
                 if (winner != "")
@@ -189,12 +199,14 @@ function startGame()
         $("#btnStartGame").hide();
         $("#divLiveGame").show();
         $("#btnStartNight").show();
+        $("#btnRecall").show();
         
         $("#btnDebug").prop("disabled", true);
         $("#btnDebug").hide();
         
         playerConnected = new Array(playerNames.length);
         playerAlive = new Array(playerNames.length);
+        playerDeathMessage = new Array(playerName.length);
     
         assignRoles();
         
@@ -468,9 +480,12 @@ function beginNight()
     playerTargets = new Array(playerNames.length);
     mafiaKillId = 0;
     mafiaTarget = [];
+    if ( !($("#settingMedicRepeat").prop("checked")) )
+        medicPastTarget = medicTarget;
     medicTarget = -1;
     oracleTarget = -1;
     prostituteTarget = -1;
+    serialKillerTarget = -1;
     
     $(".pLynch").prop("disabled", true);
     
@@ -480,6 +495,7 @@ function beginNight()
     setTimeout(function(){ wakeRole("Mafia"); }, 10000);
     
     $("#btnStartNight").prop('disabled', true);
+    $("#btnRecall").prop('disabled', false);
 }
 
 function chosenTarget(playerName, target)
@@ -608,6 +624,11 @@ function chosenTarget(playerName, target)
         prostituteTarget = targetID;
         logEvent(playerName + " [Prostitute] has taken " + target + " home!");
     }
+    else if (currentRole == "SerialKiller")
+    {
+        serialKillerTarget = targetID;
+        logEvent(playerName + " [Serial Killer] has murdered " + target + "!");
+    }
     else
     {
         logEvent(playerName + " [" + role + "] has targeted " + target + "!");
@@ -684,7 +705,7 @@ function wakeRole(role)
     currentRole = role;
     
     if ( batchChooseTarget(role) == 0 || (role == "Vigilante" && vigiTarget != -1) )
-        setTimeout(fakeDead, Math.floor((Math.random() * 15000) + 15000));
+        setTimeout(fakeDead, Math.floor((Math.random() * 20000) + 5000));
     
     speakText(role + ". Open your eyes and choose your target.");
 }
@@ -703,9 +724,18 @@ function batchChooseTarget(role)
     {
         separatedPlayers[1].unshift("None");
     }
+    else if (role == "Medic")
+    {
+        if ( medicPastTarget != -1 )
+        {
+            var index = separatedPlayers[1].indexOf(medicPastTarget);
+            if (index != -1)
+                separatedPlayers[1].splice(index, 1);
+        }
+    }
     
     for (wr_i = 0; wr_i < separatedPlayers[0].length; wr_i++) {
-        if (role == "Barkeeper" && playerRoles[getPlayerID(separatedPlayers[0][wr_i])] != "Barkeeper")
+        if ( ( role == "Barkeeper" && playerRoles[getPlayerID(separatedPlayers[0][wr_i])] != "Barkeeper" ) )
             continue;
         
         executeCommand("chooseTarget", separatedPlayers[0][wr_i], separatedPlayers[1].join("~"), true);
@@ -727,6 +757,7 @@ function wakeAll()
     
     currentNight ++;
     $("#btnStartNight").prop('disabled', false);
+    $("#btnRecall").prop('disabled', true);
 }
 
 function processAndAnnounce()
@@ -740,8 +771,11 @@ function processAndAnnounce()
         shotList.push(mafiaTarget[t]);
     }
     
-    if (vigiTarget != -1)
+    if (vigiTarget != -1 && playerAlive[vigiTarget])
         shotList.push(vigiTarget);
+        
+    if (serialKillerTarget != -1 && prostituteTarget != getRolePlayer("SerialKiller"))
+        shotList.push(serialKillerTarget);
         
     if (medicTarget != -1)
     {
@@ -782,8 +816,16 @@ function processAndAnnounce()
         
         for (t = 0; t < shotList.length; t++)
         {
-            changePlayerStatus(shotList[t], false);
-            announcement = announcement + ", " + playerNames[shotList[t]];
+            if (playerAlive[shotList[t]])
+            {
+                changePlayerStatus(shotList[t], false);
+                announcement = announcement + ", " + playerNames[shotList[t]];
+                
+                if (playerDeathMessage[shotList[t]] != undefined)
+                {
+                    announcement = announcement + ", their last words were... " + playerDeathMessage[shotList[t]];
+                }
+            }
         }
         
         if (shotList.indexOf(ourOracle) != -1)
@@ -817,4 +859,17 @@ function checkWinCondition()
     }
     
     return "";
+}
+
+function saveDeathMessage(playerName, message)
+{
+    if (currentNight == 0)
+    {
+        var player = getPlayerID(playerName);
+        
+        playerDeathMessage[player] = message;
+        logEvent("Received death message from " + playerName + ": " + message);
+    }
+    else
+        logEvent("Ignored death message from " + playerName + ": " + message);
 }

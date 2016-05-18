@@ -1,12 +1,19 @@
 var loaded  = false;
 var myRole = "";
-var noActionMessage = "<center>No action to perform at this time.<br><button class=\"btn btn-xs btn-success\" onClick=\"refreshListen();\">Refresh</button></center>";
+var noActionMessage = "<center>No action to perform at this time.<br><button id=\"btnRefresh\" class=\"btn btn-xs btn-success\" onClick=\"refreshListen();\">Refresh</button></center>";
 
 // Front-end logic
 $("#tbGameID").keypress(function(event) {
     if (event.which == 13) {
         event.preventDefault();
         $("#btnJoinGameID").click();
+    }
+});
+
+$("#tbDeathMessage").keypress(function(event) {
+    if (event.which == 13) {
+        event.preventDefault();
+        $("#btnSubmitDeathMessage").click();
     }
 });
 
@@ -54,6 +61,13 @@ $("#showRole").click(function() {
         $("#playerRole").text("HIDDEN");
         $("#showRole").text("[SHOW]");
     }
+});
+
+$("#btnSubmitDeathMessage").click(function () {
+    $("#tbDeathMessage").hide();
+    $("#btnSubmitDeathMessage").hide();
+    
+    executeCommand("setDeathMessage", "", $("#tbDeathMessage").val(), false);
 });
 
 // Back-end logic

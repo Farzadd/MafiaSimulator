@@ -27,6 +27,8 @@
         echo gameOver();
     else if ($i_command == "confirmConnection")
         echo confirmConnection();
+    else if ($i_command == "setDeathMessage")
+        echo setDeathMessage();
     else
         echo "ERROR 001: Invalid command";
 
@@ -45,6 +47,7 @@
         session_start();
         
         $_SESSION['night'] = 0;
+        $_SESSION['pid'] = 0;
         $_SESSION['server_id'] = $i_issuer;
         $_SESSION['players'] = $i_arg1;
         $_SESSION['messageQueue_' . $i_issuer] = array();
@@ -133,6 +136,16 @@
         return addToMessageQueue("infoConfirmed", "", "");
     }
     
+    function setDeathMessage()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("setDeathMessage", $i_arg1, $i_arg2);
+    }
+    
     function gameOver()
     {
         global $i_issuer, $i_session, $i_arg1, $i_arg2;
@@ -206,6 +219,8 @@
         
         $messages = $_SESSION['messageQueue_' . $i_issuer];
         $_SESSION['messageQueue_' . $i_issuer] = array();
+        
+        $_SESSION['pid'] = ($_SESSION['pid'] + 1) % 500;
         
         return json_encode($messages);
     }

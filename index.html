@@ -161,6 +161,11 @@
                                                 <input id="numDetective2" value="1" type="checkbox">Insane Cop</input>
                                             </label>
                                         </div>
+                                        <div class="col-xs-4 btn-group" data-toggle="buttons">
+                                            <label class="btn btn-info" style="width: 150px;">
+                                                <input id="numSerialKiller" value="1" type="checkbox">Serial Killer</input>
+                                            </label>
+                                        </div>
                                     </div>
                                 </center>
                                 <div style="margin-top: 25px;">
@@ -228,6 +233,7 @@
                                 <button id="btnStartGame" class="btn btn-success" style="width:100%; margin-bottom: 15px;" type="button" disabled>Start Game</button>
                                 <button id="btnDebug" class="btn btn-warning" style="width:100%; margin-bottom: 15px;" type="button">Debug Mode</button>
                                 <button id="btnStartNight" class="btn btn-warning" style="width:100%; margin-bottom: 30px; display:none;" type="button">Begin Night</button>
+                                <button id="btnRecall" class="btn btn-danger" style="width:100%; margin-bottom: 30px; display:none;" type="button" disabled>Recall Current Role</button>
                             </div>
                         </div>
                     </fieldset>
@@ -273,6 +279,14 @@
                             You are: <b><span id="playerStatus">ALIVE</span></b><br>
                             Your role is: <b><span id="playerRole">HIDDEN</span></b> <a id="showRole" href="#">[SHOW]</a>
                         </center>
+                        <div class="row" style="margin-top: 16px">
+                            <div class="col-md-8">
+                                <input id="tbDeathMessage" class="form-control" type="text" placeholder="Death Message" style="margin-bottom: 5px"></input>
+                            </div>
+                            <div class="col-md-4">
+                                <button id="btnSubmitDeathMessage" class="btn btn-primary" type="button" style="width: 100%">Save</button>
+                            </div>
+                        </div>
                     </fieldset>
                 </div>
                 <div class="col-md-6" style="margin-bottom: 25px;">

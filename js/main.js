@@ -56,6 +56,12 @@ function refreshListen()
     if (listenTimer != -1)
         clearTimeout(listenTimer);
     
+    $("#btnRefresh").prop("disabled", true);
+    
+    setTimeout( function() {
+        $("#btnRefresh").prop("disabled", false);
+    }, 2000 );
+    
     listen();
 }
 
@@ -88,5 +94,9 @@ function handleCommand(issuer, command, arg)
     else if (command == "gameOver")
     {
         clientGameOver(arg);
+    }
+    else if (command == "setDeathMessage")
+    {
+        saveDeathMessage(issuer, arg);
     }
 }
