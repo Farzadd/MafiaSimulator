@@ -22,16 +22,24 @@ function autorun()
 {
 }
 
-function executeCommand(command, arg1, arg2, async) {
+function executeCommand(command, arg1, arg2, callback, attempt) {
     var session = gameID;
     if (session == "")
         session = "none";
     
-    return $.ajax({
+    var ajaxR = $.ajax({
         type: "GET",
         url: "server.php?id=" + userID + "&session=" + session + "&cmd=" + command + "&arg1=" + arg1 + "&arg2=" + arg2,
-        async: async
-    }).responseText;
+        async: true
+    }).fail(function() {
+        if (attempt < 5)
+            executeCommand(command, arg1, arg2, callback, attempt+1);
+    });
+    
+    if (callback != null)
+    {
+        ajaxR.done(callback);
+    }
 }
 
 function listen()
@@ -39,16 +47,21 @@ function listen()
     listenTimer = setInterval(
       function() 
       {
-        var commands_j = executeCommand("pullMessages", gameID, "", false);
-        var commands = $.parseJSON(commands_j);
+        executeCommand("pullMessages", gameID, "", listen_post, 0);
         
-        if (commands != "")
-        {
-            $.each( commands, function( key, value ) {
-                handleCommand(value["issuer"], value["message"], value["arg"]);
-            });
-        }
-      }, 2000);
+      }, 4000);
+}
+
+function listen_post(results)
+{
+    var commands = $.parseJSON(results);
+        
+    if (commands != "")
+    {
+        $.each( commands, function( key, value ) {
+            handleCommand(value["issuer"], value["message"], value["arg"]);
+        });
+    }
 }
 
 function refreshListen()
@@ -98,5 +111,9 @@ function handleCommand(issuer, command, arg)
     else if (command == "setDeathMessage")
     {
         saveDeathMessage(issuer, arg);
+    }
+    else if (command == "updateGameRules")
+    {
+        receiveGameInfo(arg);
     }
 }

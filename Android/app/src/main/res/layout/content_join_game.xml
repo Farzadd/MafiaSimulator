@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/content_join_game"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="ca.daei.mafiasimulator.JoinGame"
+    tools:showIn="@layout/activity_join_game"
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="25dp"
+    app:layout_constraintRight_toRightOf="@+id/content_join_game"
+    tools:layout_constraintRight_creator="0">
+
+    <Button
+        android:text="@string/JoinGame_Join"
+        android:layout_width="215dp"
+        android:layout_height="wrap_content"
+        tools:layout_editor_absoluteX="84dp"
+        tools:layout_editor_absoluteY="154dp"
+        android:id="@+id/joinGameButton"
+        android:background="@android:color/holo_blue_bright"
+        app:layout_constraintLeft_toLeftOf="@+id/content_join_game"
+        tools:layout_constraintLeft_creator="0"
+        app:layout_constraintTop_toBottomOf="@+id/joinGameID"
+        android:layout_marginTop="24dp"
+        tools:layout_constraintTop_creator="0"
+        app:layout_constraintRight_toRightOf="@+id/content_join_game"
+        tools:layout_constraintRight_creator="0"
+        android:onClick="performJoin" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        tools:layout_editor_absoluteX="84dp"
+        tools:layout_editor_absoluteY="88dp"
+        android:id="@+id/joinGameID"
+        android:maxLines="1"
+        app:layout_constraintLeft_toLeftOf="@+id/content_join_game"
+        tools:layout_constraintLeft_creator="0"
+        app:layout_constraintTop_toTopOf="@+id/content_join_game"
+        android:layout_marginTop="88dp"
+        tools:layout_constraintTop_creator="0"
+        app:layout_constraintRight_toRightOf="@+id/content_join_game"
+        tools:layout_constraintRight_creator="0"
+        android:hint="@string/JoinGame_EnterID"
+        android:inputType="text" />
+
+    <ProgressBar
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:layout_editor_absoluteX="168dp"
+        tools:layout_editor_absoluteY="354dp"
+        android:id="@+id/joinGameProgress"
+        app:layout_constraintLeft_toLeftOf="@+id/content_join_game"
+        tools:layout_constraintLeft_creator="0"
+        app:layout_constraintTop_toBottomOf="@+id/joinGameButton"
+        android:layout_marginTop="152dp"
+        tools:layout_constraintTop_creator="0"
+        app:layout_constraintRight_toRightOf="@+id/content_join_game"
+        tools:layout_constraintRight_creator="0"
+        android:visibility="invisible"
+        android:indeterminate="true" />
+
+</android.support.constraint.ConstraintLayout>

@@ -214,15 +214,20 @@ function startGame()
         disableForm("settingForm");
         
         userID = Math.floor((Math.random() * 8999) + 1000);
-        gameID = executeCommand("createSession", playerNames.join(","), "", false);
-        $('#txtGameID').text("Game ID: " + gameID);
-        
-        listen();
-        gameStarted = true;
-        
-        logEvent("Game Started with ID: " + gameID + "!");
-        speakText("The game has started. The game ID is: " + gameID);
+        executeCommand("createSession", playerNames.join(","), "", startGame_post, 0);
     }
+}
+
+function startGame_post(results)
+{
+    gameID = results;
+    $('#txtGameID').text("Game ID: " + gameID);
+        
+    listen();
+    gameStarted = true;
+    
+    logEvent("Game Started with ID: " + gameID + "!");
+    speakText("The game has started. The game ID is: " + gameID);
 }
 
 function disableForm(form)
@@ -249,6 +254,7 @@ function processConnection(player)
     playerConnected[tID] = true;
     
     updateClient(tID);
+    executeCommand("updateGameRules", player, "Majid", null, 0);
     
     $("#pnl_" + player).html("<b>" + $("#pnl_" + player).html() + "</b>");
     logEvent(player + " has connected!");
@@ -327,7 +333,7 @@ function updateClient(player)
     updateArr[1] = playerRoles[player];
     updateArr[2] = alivePlayers.join("~");
     updateArr[3] = deadPlayers.join("~");
-    executeCommand("updateClient", playerNames[player], JSON.stringify(updateArr), true);
+    executeCommand("updateClient", playerNames[player], JSON.stringify(updateArr), null, 0);
 }
 
 function updateAllClients()
@@ -355,7 +361,7 @@ function updateAllClients()
             updateArr[0] = playerAlive[cl_id];
             updateArr[1] = playerRoles[cl_id];
             
-            executeCommand("updateClient", playerNames[cl_id], JSON.stringify(updateArr), true);
+            executeCommand("updateClient", playerNames[cl_id], JSON.stringify(updateArr), null, 0);
         }
     }
 }
@@ -570,7 +576,7 @@ function chosenTarget(playerName, target)
         var isMafia = (getPlayerFaction(targetID) == "Mafia");
         if (insaneCop == 0)
             isMafia = !isMafia;
-        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", true);
+        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", null, 0);
         
         return;
     }
@@ -581,7 +587,7 @@ function chosenTarget(playerName, target)
         var isMafia = (getPlayerFaction(targetID) == "Mafia");
         if (insaneCop == 1)
             isMafia = !isMafia;
-        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", true);
+        executeCommand("infoAndConfirm", playerName, target + " is <b>" + (isMafia ? "Mafia" : "NOT Mafia") + "</b>.", null, 0);
         
         return;
     }
@@ -596,7 +602,7 @@ function chosenTarget(playerName, target)
         {
             logEvent(playerName + " [Policeman] has compared " + target + " to " + playerNames[policeReference] + "!");
             
-            executeCommand("infoAndConfirm", playerName, target + " and " + playerNames[policeReference] + " are in <b>" + ((getPlayerFaction(targetID) == getPlayerFaction(policeReference)) ? "THE SAME</b> faction." : "DIFFERENT</b> factions."), true);
+            executeCommand("infoAndConfirm", playerName, target + " and " + playerNames[policeReference] + " are in <b>" + ((getPlayerFaction(targetID) == getPlayerFaction(policeReference)) ? "THE SAME</b> faction." : "DIFFERENT</b> factions."), null, 0);
             return;
         }
     }
@@ -726,9 +732,14 @@ function batchChooseTarget(role)
     }
     else if (role == "Medic")
     {
+        if ( $("#settingMedicSelf").prop("checked") )
+        {
+            separatedPlayers[1] = separatedPlayers[0].concat(separatedPlayers[1]);
+        }
+        
         if ( medicPastTarget != -1 )
         {
-            var index = separatedPlayers[1].indexOf(medicPastTarget);
+            var index = separatedPlayers[1].indexOf(playerNames[medicPastTarget]);
             if (index != -1)
                 separatedPlayers[1].splice(index, 1);
         }
@@ -738,7 +749,7 @@ function batchChooseTarget(role)
         if ( ( role == "Barkeeper" && playerRoles[getPlayerID(separatedPlayers[0][wr_i])] != "Barkeeper" ) )
             continue;
         
-        executeCommand("chooseTarget", separatedPlayers[0][wr_i], separatedPlayers[1].join("~"), true);
+        executeCommand("chooseTarget", separatedPlayers[0][wr_i], separatedPlayers[1].join("~"), null, 0);
     }
     
     return separatedPlayers[0].length;
@@ -848,13 +859,13 @@ function checkWinCondition()
     if (count[0] == 0)
     {
         $("#gameStatus").text("Town Victory");
-        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Town", true);
+        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Town", null, 0);
         return "Town"
     }
     else if (count[0] >= count[1])
     {
         $("#gameStatus").text("Mafia Victory");
-        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Mafia", true);
+        executeCommand("gameOver", "R_ALL_PLAYERS_B", "Mafia", null, 0);
         return "Mafia";
     }
     

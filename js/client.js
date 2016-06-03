@@ -19,8 +19,12 @@ $("#tbDeathMessage").keypress(function(event) {
 
 $("#btnJoinGameID").click(function() {
     gameID = $("#tbGameID").val();
-    var response = executeCommand("joinServer", "", "", false);
-    
+    executeCommand("joinServer", "", "", joinGame_post, 0);
+    $("#btnJoinGameID").prop("disabled", true);
+});
+
+function joinGame_post(response)
+{
     if (response == "FAIL")
     {
         $("#divSelectPlayer").html("<center>Unable to join game!</center>");
@@ -37,7 +41,7 @@ $("#btnJoinGameID").click(function() {
         
         $(".selectPlayer").click(function() {
             userID = $(this).text();
-            var response = executeCommand("confirmConnection", "", "", false);
+            executeCommand("confirmConnection", "", "", null, 0);
             
             $("#playerName").text(userID);
             listen();
@@ -48,7 +52,7 @@ $("#btnJoinGameID").click(function() {
     }
     $("#divJoinGame").hide();
     $("#divSelectPlayer").show();
-});
+}
 
 $("#showRole").click(function() {
     if ( $("#playerRole").text() == "HIDDEN" )
@@ -67,7 +71,7 @@ $("#btnSubmitDeathMessage").click(function () {
     $("#tbDeathMessage").hide();
     $("#btnSubmitDeathMessage").hide();
     
-    executeCommand("setDeathMessage", "", $("#tbDeathMessage").val(), false);
+    executeCommand("setDeathMessage", "", $("#tbDeathMessage").val(), null, 0);
 });
 
 // Back-end logic
@@ -129,7 +133,7 @@ function clientChooseTarget(arg)
     
     $(".chooseTarget").click(function() {
         var targetID = $(this).text();
-        var response = executeCommand("chosenTarget", targetID, "", false);
+        executeCommand("chosenTarget", targetID, "", null, 0);
         
         $("#actionArea").html(noActionMessage);
     });
@@ -142,7 +146,7 @@ function clientInfoAndConfirm(arg)
     $( "#actionArea" ).html(tempString);
     
     $("#confirmInfo").click(function() {
-        var response = executeCommand("infoConfirmed", "", "", false);
+        executeCommand("infoConfirmed", "", "", null, 0);
         
         $("#actionArea").html(noActionMessage);
     });
@@ -152,4 +156,9 @@ function clientGameOver(arg)
 {
     $('#victoryModalLabel').text(arg + " Victory!");
     $('#victoryModal').modal('show');
+}
+
+function receiveGameInfo(info)
+{
+    $('#gameRules').html(info);
 }

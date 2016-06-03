@@ -29,6 +29,8 @@
         echo confirmConnection();
     else if ($i_command == "setDeathMessage")
         echo setDeathMessage();
+    else if ($i_command == "updateGameRules")
+        echo updateGameRules();
     else
         echo "ERROR 001: Invalid command";
 
@@ -42,7 +44,7 @@
         $playerNames = explode(",", $i_arg1);
         $rand = rand ( 10, 99 );
         
-        $gameID = substr($playerNames[0], 0, 1) . $rand;
+        $gameID = strtoupper(substr($playerNames[0], 0, 1)) . $rand;
         session_id( "x" . $gameID );
         session_start();
         
@@ -154,6 +156,16 @@
         session_start();
         
         return addToMessageQueue("gameOver", $i_arg1, $i_arg2);
+    }
+    
+    function updateGameRules()
+    {
+        global $i_issuer, $i_session, $i_arg1, $i_arg2;
+        
+        session_id( "x" . $i_session );
+        session_start();
+        
+        return addToMessageQueue("updateGameRules", $i_arg1, $i_arg2);
     }
     
     function getNightNum()
